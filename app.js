@@ -579,8 +579,9 @@ function renderOverviewLists() {
         .join("")
     : emptyCard("No follow-ups pending.");
 
-  recentCalls.innerHTML = state.calls.length
-    ? [...state.calls]
+  const visibleCalls = getVisibleCalls();
+  recentCalls.innerHTML = visibleCalls.length
+    ? [...visibleCalls]
         .sort((a, b) => new Date(b.calledAt) - new Date(a.calledAt))
         .slice(0, 5)
         .map((call) => {
@@ -888,6 +889,7 @@ function permanentlyDeleteLead(leadId) {
   if (!window.confirm(`Permanently delete ${lead.leadName}? This cannot be restored.`)) return;
 
   state.deletedLeads = state.deletedLeads.filter((item) => item.id !== leadId);
+  removeLeadActivity([leadId]);
   persistAndRender();
 }
 
@@ -905,7 +907,14 @@ function permanentlyDeleteFilteredLeads() {
 
   const deleteIds = new Set(deletedRows.map((lead) => lead.id));
   state.deletedLeads = state.deletedLeads.filter((lead) => !deleteIds.has(lead.id));
+  removeLeadActivity(deleteIds);
   persistAndRender();
+}
+
+function removeLeadActivity(leadIds) {
+  const ids = new Set(leadIds);
+  state.calls = state.calls.filter((call) => !ids.has(call.leadId));
+  state.followups = state.followups.filter((followup) => !ids.has(followup.leadId));
 }
 
 function getFilteredDeletedLeads() {
@@ -949,7 +958,7 @@ function renderFollowups() {
 }
 
 function renderCalls() {
-  const rows = [...state.calls].sort((a, b) => new Date(b.calledAt) - new Date(a.calledAt));
+  const rows = [...getVisibleCalls()].sort((a, b) => new Date(b.calledAt) - new Date(a.calledAt));
   callList.innerHTML = rows.length
     ? rows
         .map((call) => {
@@ -1184,9 +1193,19 @@ function toGoogleDate(date) {
 }
 
 function getSortedFollowups() {
+  const activeLeadIds = getActiveLeadIds();
   return [...state.followups]
-    .filter((item) => item.dueAt)
+    .filter((item) => item.dueAt && activeLeadIds.has(item.leadId))
     .sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt));
+}
+
+function getActiveLeadIds() {
+  return new Set(state.leads.map((lead) => lead.id));
+}
+
+function getVisibleCalls() {
+  const activeLeadIds = getActiveLeadIds();
+  return state.calls.filter((call) => activeLeadIds.has(call.leadId));
 }
 
 function findLead(leadId) {
@@ -1581,7 +1600,14 @@ function normalizeState(inputState) {
     userTemplates: inputState.userTemplates || {},
   };
 
-  normalized.followups = normalized.followups.filter((item) => item.source !== "lead");
+  const retainedLeadIds = new Set([
+    ...normalized.leads.map((lead) => lead.id),
+    ...normalized.deletedLeads.map((lead) => lead.id),
+  ]);
+  normalized.followups = normalized.followups.filter(
+    (item) => item.source !== "lead" && retainedLeadIds.has(item.leadId)
+  );
+  normalized.calls = normalized.calls.filter((call) => retainedLeadIds.has(call.leadId));
 
   if (!normalized.leads.some((lead) => lead.id === normalized.selectedLeadId)) {
     normalized.selectedLeadId = normalized.leads[0]?.id || "";
