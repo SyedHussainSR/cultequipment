@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FollowUp CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <section class="auth-panel" id="authPanel">
+        <div class="auth-card">
+          <div class="brand-lockup">
+            <div>
+              <img
+                class="brand-logo"
+                src="./assets/cult-equipment-logo.png"
+                alt="Cult Equipment"
+              />
+              <p>ASM Dashboard</p>
+            </div>
+          </div>
+          <p class="auth-copy">
+            Lead Followups
+          </p>
+          <div class="auth-subcopy">
+            Manage premium equipment leads, ASM ownership, call follow-ups, and closure actions.
+          </div>
+          <form id="loginForm" class="auth-form" action="javascript:void(0)">
+            <label>
+              <span>Email</span>
+              <input
+                type="email"
+                id="loginEmail"
+                placeholder="Enter email"
+                required
+              />
+            </label>
+            <label>
+              <span>Password</span>
+              <input
+                type="password"
+                id="loginPassword"
+                placeholder="Enter password"
+                required
+              />
+            </label>
+            <button type="submit" class="primary-btn">Login</button>
+          </form>
+          <div class="auth-error hidden" id="authError">
+            Invalid email or password.
+          </div>
+          <div class="auth-note">
+            Authorized access only.
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-shell hidden" id="dashboardShell">
+        <aside class="sidebar">
+          <div class="sidebar-brand">
+            <img src="./assets/cult-equipment-logo.png" alt="Cult Equipment" />
+            <p>ASM Dashboard</p>
+          </div>
+          <nav class="nav-list">
+            <button class="nav-item active" data-view="overview">Overview</button>
+            <button class="nav-item" data-view="salesFunnel">Sales Funnel</button>
+            <button class="nav-item" data-view="leads">Leads</button>
+            <button class="nav-item" data-view="deletedLeads">Deleted Leads</button>
+            <button class="nav-item" data-view="followups">Follow-ups</button>
+            <button class="nav-item" data-view="calls">Call Log</button>
+          </nav>
+          <div class="sidebar-footer">
+            <div class="user-pill">
+              <span class="user-dot"></span>
+              <div>
+                <strong id="userName">Sales User</strong>
+                <p id="userEmail">sales@company.com</p>
+              </div>
+            </div>
+            <button id="logoutBtn" class="ghost-btn">Logout</button>
+          </div>
+        </aside>
+
+        <main class="main-panel">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow" id="viewEyebrow">Daily operating view</p>
+              <h1 id="viewTitle">Overview</h1>
+            </div>
+            <div class="topbar-actions">
+              <button class="secondary-btn" data-open-modal="templateModal">
+                Templates
+              </button>
+              <button class="secondary-btn" data-open-modal="callModal">
+                Log call
+              </button>
+              <button class="secondary-btn" data-open-modal="bulkLeadModal">
+                Import CSV
+              </button>
+              <button class="primary-btn" data-open-modal="leadModal">
+                Add lead
+              </button>
+            </div>
+          </header>
+
+          <section class="view active" id="overviewView">
+            <div class="metric-grid" id="metricGrid"></div>
+            <div class="split-grid">
+              <article class="panel-card">
+                <div class="panel-heading">
+                  <div>
+                    <p class="panel-kicker">Today</p>
+                    <h3>Immediate follow-ups</h3>
+                  </div>
+                </div>
+                <div id="todayFollowups" class="stack-list"></div>
+              </article>
+
+              <article class="panel-card">
+                <div class="panel-heading">
+                  <div>
+                    <p class="panel-kicker">Recent</p>
+                    <h3>Latest call activity</h3>
+                  </div>
+                </div>
+                <div id="recentCalls" class="stack-list"></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="view" id="salesFunnelView">
+            <article class="panel-card funnel-card">
+              <div class="panel-heading">
+                <div>
+                  <p class="panel-kicker">Sales funnel</p>
+                  <h3>Qualified lead conversion report</h3>
+                </div>
+              </div>
+              <div class="funnel-layout">
+                <div class="funnel-visual" id="funnelStageList"></div>
+                <div class="funnel-summary" id="funnelSummary"></div>
+              </div>
+            </article>
+          </section>
+
+          <section class="view" id="leadsView">
+            <div class="content-grid leads-layout">
+              <article class="panel-card">
+                <div class="panel-heading">
+                  <div>
+                    <p class="panel-kicker">Lead book</p>
+                    <h3>All leads</h3>
+                  </div>
+                  <div class="panel-actions">
+                    <button class="secondary-btn small" data-open-modal="bulkLeadModal">
+                      Bulk upload
+                    </button>
+                    <button class="primary-btn small" data-open-modal="leadModal">
+                      New lead
+                    </button>
+                  </div>
+                </div>
+                <div id="leadsTable" class="table-list"></div>
+              </article>
+
+              <article class="panel-card detail-card">
+                <div class="panel-heading">
+                  <div>
+                    <p class="panel-kicker">Lead detail</p>
+                    <h3 id="leadDetailName">Select a lead</h3>
+                  </div>
+                </div>
+                <div id="leadDetail" class="lead-detail empty-state">
+                    Pick a lead to see ASM ownership, follow-up, and call history.
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="view" id="deletedLeadsView">
+            <article class="panel-card">
+              <div class="panel-heading">
+                <div>
+                  <p class="panel-kicker">Recycle bin</p>
+                  <h3>Deleted leads</h3>
+                </div>
+                <label class="compact-filter">
+                  <span>Deleted date</span>
+                  <input type="date" id="deletedLeadDateFilter" />
+                </label>
+                <button class="danger-btn small" id="bulkDeleteDeletedLeadsBtn" type="button">
+                  Delete filtered
+                </button>
+              </div>
+              <div id="deletedLeadsTable" class="table-list"></div>
+            </article>
+          </section>
+
+          <section class="view" id="followupsView">
+            <article class="panel-card">
+              <div class="panel-heading">
+                <div>
+                  <p class="panel-kicker">Task queue</p>
+                  <h3>Follow-up reminders</h3>
+                </div>
+                <button class="secondary-btn small" data-open-modal="followupModal">
+                  Create reminder
+                </button>
+              </div>
+              <div id="followupList" class="table-list"></div>
+            </article>
+          </section>
+
+          <section class="view" id="callsView">
+            <article class="panel-card">
+              <div class="panel-heading">
+                <div>
+                  <p class="panel-kicker">Call history</p>
+                  <h3>Tracked conversations</h3>
+                </div>
+                <button class="secondary-btn small" data-open-modal="callModal">
+                  Add call
+                </button>
+              </div>
+              <div id="callList" class="table-list"></div>
+            </article>
+          </section>
+        </main>
+      </section>
+    </div>
+
+    <dialog id="leadModal" class="modal">
+      <form method="dialog" class="modal-card modal-form" id="leadForm">
+        <div class="modal-head">
+          <div>
+            <p class="panel-kicker">Lead details</p>
+            <h3 id="leadModalTitle">Add a new lead</h3>
+          </div>
+          <button class="close-btn" type="button" data-close-modal="leadModal">X</button>
+        </div>
+        <input type="hidden" name="leadId" />
+        <div class="form-grid">
+          <label>
+            <span>ASM name</span>
+            <select name="asmName" required>
+              <option>Sanjay</option>
+              <option>mohit</option>
+              <option>govind</option>
+              <option>atul</option>
+              <option>vikas</option>
+              <option>mohan</option>
+              <option>ramesh</option>
+              <option>om</option>
+              <option>fauzan</option>
+            </select>
+          </label>
+          <label>
+            <span>Lead name</span>
+            <input type="text" name="leadName" required />
+          </label>
+          <label>
+            <span>Mobile number</span>
+            <input type="tel" name="mobile" required />
+          </label>
+          <label>
+            <span>Lead status</span>
+            <select name="status">
+              <option>Qualified Not Called</option>
+              <option>Casual Enquiry</option>
+              <option>Franchise</option>
+              <option>Sale Discussion</option>
+              <option>Sale Done</option>
+              <option>Not Responding</option>
+              <option>Quotation Sent</option>
+              <option>Waiting for response</option>
+              <option>Lost</option>
+            </select>
+          </label>
+          <label>
+            <span>Gym opening date</span>
+            <input type="date" name="gymOpeningDate" />
+          </label>
+          <label>
+            <span>Sale value</span>
+            <input type="number" name="saleValue" min="0" step="1" placeholder="Amount in INR" />
+          </label>
+          <label class="full-span hidden" id="lostReasonField">
+            <span>Lost reason</span>
+            <select
+              name="lostReason"
+            >
+              <option value="">Select lost reason</option>
+              <option>Competitor</option>
+              <option>Price too high</option>
+              <option>No budget</option>
+              <option>Not opening gym now</option>
+              <option>Not responding</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="full-span hidden" id="competitionQuoteField">
+            <span>Competition quote</span>
+            <textarea
+              name="competitionQuote"
+              rows="3"
+              placeholder="Add competitor quote, price, package, or comparison detail"
+            ></textarea>
+          </label>
+          <label class="full-span">
+            <span>Remark</span>
+            <textarea
+              name="remark"
+              rows="5"
+              placeholder="Qualified Not Called"
+            ></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" data-close-modal="leadModal">Cancel</button>
+          <button type="submit" class="primary-btn" id="leadSubmitBtn">Save lead</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="templateModal" class="modal">
+      <form method="dialog" class="modal-card modal-form" id="templateForm">
+        <div class="modal-head">
+          <div>
+            <p class="panel-kicker">WhatsApp templates</p>
+            <h3>User message shortcuts</h3>
+          </div>
+          <button class="close-btn" type="button" data-close-modal="templateModal">X</button>
+        </div>
+        <div class="bulk-upload-box">
+          <p class="support-line">
+            This catalog template is saved for the logged-in user. You can use
+            <strong>{leadName}</strong>, <strong>{asmName}</strong>, and <strong>{mobile}</strong>.
+          </p>
+          <label>
+            <span>Catalog WhatsApp message</span>
+            <textarea name="catalogMessage" rows="5"></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" data-close-modal="templateModal">Cancel</button>
+          <button type="submit" class="primary-btn">Save templates</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="bulkLeadModal" class="modal">
+      <form method="dialog" class="modal-card modal-form" id="bulkLeadForm">
+        <div class="modal-head">
+          <div>
+            <p class="panel-kicker">Bulk upload</p>
+            <h3>Import multiple leads</h3>
+          </div>
+          <button class="close-btn" type="button" data-close-modal="bulkLeadModal">X</button>
+        </div>
+        <div class="bulk-upload-box">
+          <p class="support-line">
+            Paste CSV data below or upload a CSV file using only these columns:
+            <strong>asmName, leadName, mobile, status, gymOpeningDate, saleValue, remark</strong>.
+          </p>
+          <label>
+            <span>Upload CSV file</span>
+            <input type="file" name="csvFile" accept=".csv,text/csv" />
+          </label>
+          <label>
+            <span>Paste CSV data</span>
+            <textarea
+              name="csvText"
+              rows="8"
+              placeholder="asmName,leadName,mobile,status,gymOpeningDate,saleValue,remark&#10;Sanjay,ABC Gym,9876543210,Qualified Not Called,2026-06-10,250000,Qualified Not Called"
+            ></textarea>
+          </label>
+          <div class="csv-template">
+            <strong>Supported columns</strong>
+            <code>asmName, leadName, mobile, status, gymOpeningDate, saleValue, remark</code>
+          </div>
+          <div class="bulk-result hidden" id="bulkLeadResult"></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" data-close-modal="bulkLeadModal">Cancel</button>
+          <button type="submit" class="primary-btn">Import leads</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="reassignModal" class="modal">
+      <form method="dialog" class="modal-card modal-form" id="reassignForm">
+        <div class="modal-head">
+          <div>
+            <p class="panel-kicker">Ownership</p>
+            <h3>Reassign ASM</h3>
+          </div>
+          <button class="close-btn" type="button" data-close-modal="reassignModal">X</button>
+        </div>
+        <input type="hidden" name="leadId" />
+        <div class="form-grid">
+          <label>
+            <span>Search mobile number</span>
+            <input
+              type="tel"
+              name="mobileSearch"
+              placeholder="Type lead mobile number"
+              required
+            />
+          </label>
+          <label class="full-span">
+            <span>Matched lead name</span>
+            <input type="text" name="leadName" readonly />
+            <small class="field-hint" id="reassignLeadHint">Type a mobile number to find the lead.</small>
+          </label>
+          <label>
+            <span>New ASM</span>
+            <select name="asmName" required>
+              <option>Sanjay</option>
+              <option>mohit</option>
+              <option>govind</option>
+              <option>atul</option>
+              <option>vikas</option>
+              <option>mohan</option>
+              <option>ramesh</option>
+              <option>om</option>
+              <option>fauzan</option>
+            </select>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" data-close-modal="reassignModal">Cancel</button>
+          <button type="submit" class="primary-btn">Reassign</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="followupModal" class="modal">
+      <form method="dialog" class="modal-card modal-form" id="followupForm">
+        <div class="modal-head">
+          <div>
+            <p class="panel-kicker">Reminder setup</p>
+            <h3>Create follow-up</h3>
+          </div>
+          <button class="close-btn" type="button" data-close-modal="followupModal">X</button>
+        </div>
+        <div class="form-grid">
+          <label>
+            <span>Lead</span>
+            <select name="leadId" id="followupLeadSelect" required></select>
+          </label>
+          <label>
+            <span>Priority</span>
+            <select name="priority">
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+          </label>
+          <label class="full-span">
+            <span>Reminder title</span>
+            <input type="text" name="title" placeholder="Call back after proposal review" required />
+          </label>
+          <label>
+            <span>Due date & time</span>
+            <input type="datetime-local" name="dueAt" required />
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" data-close-modal="followupModal">Cancel</button>
+          <button type="submit" class="primary-btn">Save reminder</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="callModal" class="modal">
+      <form method="dialog" class="modal-card modal-form" id="callForm">
+        <div class="modal-head">
+          <div>
+            <p class="panel-kicker">Call tracking</p>
+            <h3>Log a customer call</h3>
+          </div>
+          <button class="close-btn" type="button" data-close-modal="callModal">X</button>
+        </div>
+        <div class="form-grid">
+          <label>
+            <span>Lead</span>
+            <select name="leadId" id="callLeadSelect" required></select>
+          </label>
+          <label>
+            <span>Call status</span>
+            <select name="outcome">
+              <option>Call Answered</option>
+              <option>Call Not Answered</option>
+              <option>Quotation shared</option>
+              <option>Messaged on WhatsApp</option>
+              <option>Call attempted</option>
+            </select>
+          </label>
+          <label>
+            <span>Call time</span>
+            <input type="datetime-local" name="calledAt" required />
+          </label>
+          <label class="full-span">
+            <span>Call remark</span>
+            <textarea name="summary" rows="4" placeholder="Capture call remark, customer response, objection, or next step" required></textarea>
+          </label>
+          <label>
+            <span>Set next follow-up</span>
+            <input type="datetime-local" name="nextFollowup" />
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-btn" data-close-modal="callModal">Cancel</button>
+          <button type="submit" class="primary-btn">Log call</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="./supabase-config.js"></script>
+    <script defer src="./app.js?v=20260604-5"></script>
+  </body>
+</html>
