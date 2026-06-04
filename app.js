@@ -469,6 +469,7 @@ function refreshApp() {
 
   if (!hasValidSession) return;
 
+  cleanupOrphanActivity();
   userName.textContent = state.session.name;
   userEmail.textContent = state.session.email;
   renderMetrics();
@@ -484,8 +485,10 @@ function refreshApp() {
 
 function renderMetrics() {
   const today = todayKey();
+  const activeLeadIds = getActiveLeadIds();
   const dueToday = state.followups.filter(
     (item) => !item.completed && item.dueAt.slice(0, 10) === today
+      && activeLeadIds.has(item.leadId)
   ).length;
   const openLeads = state.leads.filter((lead) => lead.status !== "Lost" && lead.status !== "Sale Done").length;
   const riskLeads = state.leads.filter(isQualifiedUncalledRisk).length;
@@ -585,7 +588,8 @@ function renderOverviewLists() {
         .sort((a, b) => new Date(b.calledAt) - new Date(a.calledAt))
         .slice(0, 5)
         .map((call) => {
-          const lead = findLead(call.leadId);
+          const lead = findActiveLead(call.leadId);
+          if (!lead) return "";
           return `
             <article class="list-item">
               <div class="row-head">
@@ -962,7 +966,8 @@ function renderCalls() {
   callList.innerHTML = rows.length
     ? rows
         .map((call) => {
-          const lead = findLead(call.leadId);
+          const lead = findActiveLead(call.leadId);
+          if (!lead) return "";
           return `
             <article class="table-row">
               <div class="row-head">
@@ -1203,9 +1208,32 @@ function getActiveLeadIds() {
   return new Set(state.leads.map((lead) => lead.id));
 }
 
+function findActiveLead(leadId) {
+  return state.leads.find((item) => item.id === leadId) || null;
+}
+
 function getVisibleCalls() {
   const activeLeadIds = getActiveLeadIds();
   return state.calls.filter((call) => activeLeadIds.has(call.leadId));
+}
+
+function cleanupOrphanActivity() {
+  const retainedLeadIds = new Set([
+    ...state.leads.map((lead) => lead.id),
+    ...state.deletedLeads.map((lead) => lead.id),
+  ]);
+  const activeLeadIds = getActiveLeadIds();
+  const nextCalls = state.calls.filter((call) => retainedLeadIds.has(call.leadId));
+  const nextFollowups = state.followups.filter((followup) => {
+    if (followup.source === "lead") return false;
+    return activeLeadIds.has(followup.leadId) || retainedLeadIds.has(followup.leadId);
+  });
+
+  if (nextCalls.length !== state.calls.length || nextFollowups.length !== state.followups.length) {
+    state.calls = nextCalls;
+    state.followups = nextFollowups;
+    saveState();
+  }
 }
 
 function findLead(leadId) {
