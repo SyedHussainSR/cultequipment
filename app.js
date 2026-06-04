@@ -4,8 +4,8 @@ const DEFAULT_LEAD_REMARK = "Qualified Not Called";
 const DEFAULT_CATALOG_MESSAGE =
   "Hi {leadName}, sharing the Cult Equipment catalog for your gym planning. Please review and tell me what equipment setup you are looking for.";
 const VALID_USERS = [
-  { email: "syed.hussain@curefit.com", password: "test@123" },
-  { email: "vinay.kh@curefit.com", password: "Cult@123" },
+  { email: "syed.hussain@curefit.com", password: "Curefit@2026" },
+  { email: "vinay.kh@curefit.com", password: "Curefit@2026" },
 ];
 const ASM_NAMES = [
   "Sanjay",
