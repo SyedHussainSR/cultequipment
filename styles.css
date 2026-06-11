@@ -812,7 +812,8 @@ textarea:focus {
 }
 
 .inline-followup input {
-  max-width: 320px;
+  max-width: 100%;
+  min-width: 0;
   cursor: pointer;
 }
 
@@ -825,6 +826,7 @@ textarea:focus {
 .detail-followup {
   margin-top: 0;
   align-content: start;
+  overflow: hidden;
 }
 
 .detail-followup .followup-current {
@@ -833,9 +835,11 @@ textarea:focus {
 }
 
 .detail-followup input {
+  width: 100%;
   max-width: 100%;
   min-height: 44px;
   background: #ffffff;
+  font-size: 0.95rem;
 }
 
 .timeline {

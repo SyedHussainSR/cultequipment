@@ -643,18 +643,6 @@ function renderLeads() {
           ${lead.remark ? `<p class="support-line">Remark: ${escapeHtml(shortenText(lead.remark, 120))}</p>` : ""}
           ${lead.status === "Lost" && lead.lostReason ? `<p class="support-line">Lost reason: ${escapeHtml(lead.lostReason)}</p>` : ""}
           ${lead.status === "Lost" && lead.competitionQuote ? `<p class="support-line">Competition quote: ${escapeHtml(shortenText(lead.competitionQuote, 120))}</p>` : ""}
-          <div class="inline-followup" data-inline-followup="${lead.id}">
-            <label>
-              <span>Follow-up date & time</span>
-              <input type="datetime-local" value="${escapeHtml(lead.nextFollowup || "")}" data-followup-date="${lead.id}" />
-            </label>
-            <div class="inline-followup-actions">
-              <button type="button" class="secondary-btn small" data-save-followup-row="${lead.id}">Save follow-up</button>
-              <button type="button" class="secondary-btn small calendar-link" data-open-calendar-row="${lead.id}">
-                Open Calendar
-              </button>
-            </div>
-          </div>
           <div class="row-actions">
             <button type="button" class="secondary-btn small" data-edit-lead-row="${lead.id}">Edit</button>
             <button type="button" class="ghost-btn small" data-reassign-lead-row="${lead.id}">Reassign ASM</button>
@@ -699,20 +687,6 @@ function renderLeads() {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       openFollowupModal(button.dataset.followupLeadRow);
-    });
-  });
-
-  document.querySelectorAll("[data-save-followup-row]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      saveInlineFollowup(button.dataset.saveFollowupRow, false, button);
-    });
-  });
-
-  document.querySelectorAll("[data-open-calendar-row]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      saveInlineFollowup(button.dataset.openCalendarRow, true, button);
     });
   });
 
