@@ -813,12 +813,29 @@ textarea:focus {
 
 .inline-followup input {
   max-width: 320px;
+  cursor: pointer;
 }
 
 .inline-followup-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.detail-followup {
+  margin-top: 0;
+  align-content: start;
+}
+
+.detail-followup .followup-current {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.detail-followup input {
+  max-width: 100%;
+  min-height: 44px;
+  background: #ffffff;
 }
 
 .timeline {

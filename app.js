@@ -705,14 +705,14 @@ function renderLeads() {
   document.querySelectorAll("[data-save-followup-row]").forEach((button) => {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
-      saveInlineFollowup(button.dataset.saveFollowupRow, false);
+      saveInlineFollowup(button.dataset.saveFollowupRow, false, button);
     });
   });
 
   document.querySelectorAll("[data-open-calendar-row]").forEach((button) => {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
-      saveInlineFollowup(button.dataset.openCalendarRow, true);
+      saveInlineFollowup(button.dataset.openCalendarRow, true, button);
     });
   });
 
@@ -753,8 +753,17 @@ function renderLeadDetail() {
       <div class="detail-chip"><span>Mobile number</span>${escapeHtml(lead.mobile)}</div>
       <div class="detail-chip"><span>Lead status</span>${escapeHtml(lead.status)}</div>
       <div class="detail-chip"><span>Gym opening date</span>${formatDate(lead.gymOpeningDate)}</div>
+      <div class="detail-chip inline-followup detail-followup" data-inline-followup="${lead.id}">
+        <span>Follow-up date & time</span>
+        <strong class="followup-current">${formatDateTime(lead.nextFollowup)}</strong>
+        <input type="datetime-local" value="${escapeHtml(lead.nextFollowup || "")}" data-followup-date="${lead.id}" />
+        <div class="inline-followup-actions">
+          <button type="button" class="secondary-btn small calendar-link" data-save-followup-detail="${lead.id}">
+            ${lead.nextFollowup ? "Change date" : "Save date"}
+          </button>
+        </div>
+      </div>
       <div class="detail-chip"><span>Sale value</span>${formatCurrency(lead.saleValue || 0)}</div>
-      <div class="detail-chip"><span>Follow-up date & time</span>${formatDateTime(lead.nextFollowup)}</div>
       ${lead.status === "Lost" ? `<div class="detail-chip"><span>Lost reason</span>${escapeHtml(lead.lostReason || "Not added")}</div>` : ""}
       ${lead.status === "Lost" ? `<div class="detail-chip"><span>Competition quote</span>${escapeHtml(lead.competitionQuote || "Not added")}</div>` : ""}
     </div>
@@ -830,6 +839,10 @@ function renderLeadDetail() {
 
   leadDetail.querySelector("[data-delete-lead]").addEventListener("click", () => {
     deleteLead(lead.id);
+  });
+
+  leadDetail.querySelector("[data-save-followup-detail]").addEventListener("click", (event) => {
+    saveInlineFollowup(lead.id, true, event.currentTarget);
   });
 }
 
@@ -1138,11 +1151,14 @@ function openFollowupModal(leadId) {
   document.getElementById("followupModal").showModal();
 }
 
-function saveInlineFollowup(leadId, openCalendar) {
+function saveInlineFollowup(leadId, openCalendar, triggerElement = null) {
   const lead = state.leads.find((item) => item.id === leadId);
-  const input = [...document.querySelectorAll("[data-followup-date]")].find(
-    (field) => field.dataset.followupDate === leadId
-  );
+  const container = triggerElement?.closest?.("[data-inline-followup]");
+  const input =
+    container?.querySelector("[data-followup-date]") ||
+    [...document.querySelectorAll("[data-followup-date]")].find(
+      (field) => field.dataset.followupDate === leadId
+    );
   const dueAt = input?.value || "";
   if (!lead || !dueAt) {
     window.alert("Please select follow-up date and time first.");
