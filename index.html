@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260611-1" />
   </head>
   <body>
     <div class="app-shell">
@@ -250,6 +250,7 @@
           <label>
             <span>ASM name</span>
             <select name="asmName" required>
+              <option>Unassigned</option>
               <option>Sanjay</option>
               <option>mohit</option>
               <option>govind</option>
@@ -378,7 +379,7 @@
             <textarea
               name="csvText"
               rows="8"
-              placeholder="asmName,leadName,mobile,status,gymOpeningDate,saleValue,remark&#10;Sanjay,ABC Gym,9876543210,Qualified Not Called,2026-06-10,250000,Qualified Not Called"
+              placeholder="asmName,leadName,mobile,status,gymOpeningDate,saleValue,remark&#10;Unassigned,ABC Gym,9876543210,Qualified Not Called,2026-06-10,250000,Qualified Not Called"
             ></textarea>
           </label>
           <div class="csv-template">
@@ -422,6 +423,7 @@
           <label>
             <span>New ASM</span>
             <select name="asmName" required>
+              <option>Unassigned</option>
               <option>Sanjay</option>
               <option>mohit</option>
               <option>govind</option>
@@ -525,6 +527,6 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="./supabase-config.js"></script>
-    <script defer src="./app.js?v=20260604-8"></script>
+    <script defer src="./app.js?v=20260611-1"></script>
   </body>
 </html>

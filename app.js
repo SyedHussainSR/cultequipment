@@ -8,6 +8,7 @@ const VALID_USERS = [
   { email: "vinay.kh@curefit.com", password: "Curefit@2026" },
 ];
 const ASM_NAMES = [
+  "Unassigned",
   "Sanjay",
   "mohit",
   "govind",
@@ -368,10 +369,12 @@ function bindForms() {
   followupForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const formData = new FormData(followupForm);
+    let calendarUrl = "";
     const lead = state.leads.find((item) => item.id === formData.get("leadId"));
     if (lead) {
       lead.nextFollowup = formData.get("dueAt");
       scheduleNotification(lead);
+      calendarUrl = buildGoogleCalendarUrl(lead, formData.get("dueAt"));
     }
 
     state.followups.unshift({
@@ -385,6 +388,9 @@ function bindForms() {
     persistAndRender();
     closeModal("followupModal");
     followupForm.reset();
+    if (calendarUrl) {
+      window.open(calendarUrl, "_blank", "noopener");
+    }
   });
 
   callForm.addEventListener("submit", (event) => {
@@ -637,11 +643,24 @@ function renderLeads() {
           ${lead.remark ? `<p class="support-line">Remark: ${escapeHtml(shortenText(lead.remark, 120))}</p>` : ""}
           ${lead.status === "Lost" && lead.lostReason ? `<p class="support-line">Lost reason: ${escapeHtml(lead.lostReason)}</p>` : ""}
           ${lead.status === "Lost" && lead.competitionQuote ? `<p class="support-line">Competition quote: ${escapeHtml(shortenText(lead.competitionQuote, 120))}</p>` : ""}
+          <div class="inline-followup" data-inline-followup="${lead.id}">
+            <label>
+              <span>Follow-up date & time</span>
+              <input type="datetime-local" value="${escapeHtml(lead.nextFollowup || "")}" data-followup-date="${lead.id}" />
+            </label>
+            <div class="inline-followup-actions">
+              <button type="button" class="secondary-btn small" data-save-followup-row="${lead.id}">Save follow-up</button>
+              <button type="button" class="secondary-btn small calendar-link" data-open-calendar-row="${lead.id}">
+                Open Calendar
+              </button>
+            </div>
+          </div>
           <div class="row-actions">
             <button type="button" class="secondary-btn small" data-edit-lead-row="${lead.id}">Edit</button>
             <button type="button" class="ghost-btn small" data-reassign-lead-row="${lead.id}">Reassign ASM</button>
             <button type="button" class="danger-btn small" data-delete-lead-row="${lead.id}">Delete</button>
             <a class="whatsapp-btn small" href="${buildWhatsAppUrl(lead)}" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="secondary-btn small" href="${buildCallUrl(lead)}">Call</a>
           </div>
         </article>
       `;
@@ -673,6 +692,27 @@ function renderLeads() {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       openReassignModal(button.dataset.reassignLeadRow);
+    });
+  });
+
+  document.querySelectorAll("[data-followup-lead-row]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openFollowupModal(button.dataset.followupLeadRow);
+    });
+  });
+
+  document.querySelectorAll("[data-save-followup-row]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      saveInlineFollowup(button.dataset.saveFollowupRow, false);
+    });
+  });
+
+  document.querySelectorAll("[data-open-calendar-row]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      saveInlineFollowup(button.dataset.openCalendarRow, true);
     });
   });
 
@@ -1083,6 +1123,60 @@ function openReassignModal(leadId) {
   reassignForm.elements.namedItem("asmName").value = lead.asmName;
   updateReassignLeadHint(lead);
   document.getElementById("reassignModal").showModal();
+}
+
+function openFollowupModal(leadId) {
+  const lead = state.leads.find((item) => item.id === leadId);
+  if (!lead) return;
+
+  followupForm.reset();
+  followupForm.elements.namedItem("leadId").value = lead.id;
+  followupForm.elements.namedItem("title").value = `Follow-up with ${lead.leadName}`;
+  followupForm.elements.namedItem("priority").value = "High";
+  followupForm.elements.namedItem("dueAt").value =
+    lead.nextFollowup || toLocalDateTimeValue(new Date(Date.now() + 24 * 60 * 60 * 1000));
+  document.getElementById("followupModal").showModal();
+}
+
+function saveInlineFollowup(leadId, openCalendar) {
+  const lead = state.leads.find((item) => item.id === leadId);
+  const input = [...document.querySelectorAll("[data-followup-date]")].find(
+    (field) => field.dataset.followupDate === leadId
+  );
+  const dueAt = input?.value || "";
+  if (!lead || !dueAt) {
+    window.alert("Please select follow-up date and time first.");
+    return;
+  }
+
+  lead.nextFollowup = dueAt;
+  upsertFollowupReminder(lead, dueAt);
+  scheduleNotification(lead);
+  persistAndRender();
+
+  if (openCalendar) {
+    window.open(buildGoogleCalendarUrl(lead, dueAt), "_blank", "noopener");
+  }
+}
+
+function upsertFollowupReminder(lead, dueAt) {
+  const existing = state.followups.find((item) => item.leadId === lead.id && item.source === "lead-card");
+  const reminder = {
+    id: existing?.id || createId(),
+    leadId: lead.id,
+    title: `Follow-up with ${lead.leadName}`,
+    priority: "High",
+    dueAt,
+    completed: false,
+    source: "lead-card",
+  };
+
+  if (existing) {
+    Object.assign(existing, reminder);
+    return;
+  }
+
+  state.followups.unshift(reminder);
 }
 
 function handleReassignMobileSearch() {
@@ -1648,7 +1742,7 @@ function normalizeLead(lead) {
   const statusHistory = (lead.statusHistory || []).map(normalizeStatusChange);
   return {
     id: lead.id || createId(),
-    asmName: lead.asmName || "Unassigned",
+    asmName: normalizeAsmName(lead.asmName),
     leadName: lead.leadName || lead.company || lead.contactName || "Untitled lead",
     mobile: lead.mobile || lead.phone || "Not added",
     status: normalizeLeadStatus(lead.status),
@@ -1698,8 +1792,13 @@ function normalizeLeadStatus(status) {
 }
 
 function normalizeAsmName(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized || normalized === "not assigned" || normalized === "unassigned") {
+    return ASM_NAMES[0];
+  }
+
   const match = ASM_NAMES.find(
-    (name) => name.toLowerCase() === String(value || "").trim().toLowerCase()
+    (name) => name.toLowerCase() === normalized
   );
   return match || ASM_NAMES[0];
 }
